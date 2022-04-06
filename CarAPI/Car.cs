@@ -7,7 +7,7 @@
         public string Model { get; set; } = string.Empty;
         public int Year { get; set; }
         public double Engine { get; set; }
-        public int Price { get; set; }
+        public int? Price { get; set; }
 
     }
 }
