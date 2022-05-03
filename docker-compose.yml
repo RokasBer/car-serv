@@ -1,0 +1,20 @@
+version: '3'
+services:
+    contacts:
+        build:
+            context: contacts
+            dockerfile: Dockerfile
+        ports:
+            - "5000:5000"
+        container_name: contacts
+        networks:
+            - my-network
+    car-serv:
+        build: .
+        ports:
+            - "80:80"
+        container_name: car-serv
+        networks:
+            - my-network
+networks:
+    my-network:

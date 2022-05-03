@@ -1,5 +1,5 @@
 # car-serv
 clone repository \
-docker build -t carserv . \
-docker run -dp 80:80 carserv \
+docker-compose build
+docker-compose up
 http://localhost:80/swagger/index.html

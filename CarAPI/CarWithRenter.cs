@@ -1,6 +1,6 @@
 ﻿namespace CarAPI
 {
-    public class Car
+    public class CarWithRenter
     {
         public int Id { get; set; }
         public string Manufacturer { get; set; } = string.Empty;
@@ -8,10 +8,10 @@
         public int Year { get; set; }
         public int Price { get; set; }
         public bool isRented { get; set; }
-        public int? renterId { get; set; }
+        public Renter renter { get; set; }
         public double? Engine { get; set; }
 
-        public Car(Car car)
+        public CarWithRenter(Car car)
         {
             this.Id = car.Id;
             this.Manufacturer = car.Manufacturer;
@@ -19,14 +19,24 @@
             this.Year = car.Year;
             this.Price = car.Price;
             this.isRented = car.isRented;
-            this.renterId = car.renterId;
-            this.Engine = car.Engine;
+            if(car.Engine != null)  this.Engine = car.Engine;
+            
         }
-        public Car()
+
+        public CarWithRenter(CarWithRenter car)
+        {
+            this.Id = car.Id;
+            this.Manufacturer = car.Manufacturer;
+            this.Model = car.Model;
+            this.Year = car.Year;
+            this.Price = car.Price;
+            this.isRented = car.isRented;
+            if (car.Engine != null) this.Engine = car.Engine;
+        }
+
+        public CarWithRenter()
         {
 
         }
-        
-
     }
 }
