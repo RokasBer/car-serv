@@ -307,8 +307,8 @@ namespace CarAPI.Controllers
             }
             foreach (var carUser in cars.Where(e => e.renterId == renterId))
             {
-                car.renterId = null;
-                car.isRented = false;
+                carUser.renterId = null;
+                carUser.isRented = false;
 
             }
 
