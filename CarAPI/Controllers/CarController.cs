@@ -34,7 +34,8 @@ namespace CarAPI.Controllers
                     Year = 1989,
                     Engine = 2.4,
                     Price = 500,
-                    isRented = false
+                    isRented = true,
+                    renterId = 12345
     },
                 new Car
                 {
