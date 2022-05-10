@@ -57,6 +57,51 @@ namespace CarAPI.Controllers
             return Ok(cars);
         }*/
 
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<dynamic>>> GetCarWithUser()
+        {
+
+
+            var allCars = cars;
+            List<Object> carUsers = new List<Object>();
+            foreach (var car in allCars)
+            {
+                Renter renter = null;
+
+                try
+                {
+                    if (car.isRented)
+                    {
+                        using (var httpClient = new HttpClient())
+                        {
+                            using (var response = await httpClient.GetAsync(path + car.renterId))
+                            {
+                                string APIResponse = await response.Content.ReadAsStringAsync();
+                                renter = JsonConvert.DeserializeObject<Renter>(APIResponse);
+
+                            }
+                        }
+                        CarWithRenter carWithRenter = new CarWithRenter(car);
+                        carWithRenter.renter = renter;
+                        carUsers.Add(carWithRenter);
+
+                    }
+                    else
+                    {
+                        carUsers.Add(car);
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(ex);
+                    carUsers.Add(car);
+                }
+            }
+            return carUsers;
+
+        }
+
 
         [HttpGet("{id}")]
         public async Task<ActionResult<dynamic>> GetCarUser(int id)
@@ -67,9 +112,9 @@ namespace CarAPI.Controllers
             {
                 return BadRequest("Car not found");
             }    
-            if(car.renterId == null)
+            if(!car.isRented)
             {
-                return NotFound("Car with this id isn't rented");
+                return car;
             }
             Renter renter = null;
             try
@@ -93,65 +138,10 @@ namespace CarAPI.Controllers
 
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<dynamic>>> GetCarWithUser()
-        {
+     
 
 
-            var allCars = cars;
-            List<Object> carUsers = new List<Object>();
-            foreach (var car in allCars)
-            {
-                Renter renter = null;
-                
-                try
-                {
-                    if (car.isRented)
-                    {
-                        using (var httpClient = new HttpClient())
-                        {
-                            using (var response = await httpClient.GetAsync(path + car.renterId))
-                            {
-                                string APIResponse = await response.Content.ReadAsStringAsync();
-                                renter = JsonConvert.DeserializeObject<Renter>(APIResponse);
-
-                            }
-                        }
-                        CarWithRenter carWithRenter = new CarWithRenter(car);
-                        carWithRenter.renter = renter;
-                        carUsers.Add(carWithRenter);
-
-                    }
-                    else
-                    {
-                        carUsers.Add(car);
-                    }
-                    
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine(ex);
-                    carUsers.Add(car);
-                }
-            }
-            return carUsers;
-
-        }
-
-
-
-        /*[HttpGet("{id}")]
-        public async Task<ActionResult<Car>> Get(int id)
-        {
-            var car = cars.Find(h => h.Id == id);
-            if(car == null)
-            {
-                return BadRequest("Car not found.");
-            }
-            return car;
-        }*/
-
-        [HttpPost]
+        /*[HttpPost]
         public async Task<ActionResult<List<Car>>> AddCar(Car car)
         {
             if(car.Model == string.Empty)
@@ -189,6 +179,51 @@ namespace CarAPI.Controllers
             HttpContext.Response.Headers["Location"] = "http://localhost:80/api/Car/" + car.Id;
             //return CreatedAtAction(nameof(AddCar), new { id = car.Id }, car);
             return Ok(car);
+        }*/
+
+        [HttpPost]
+        public async Task<ActionResult<dynamic>> AddCarWithUser(CarWithRenter carWithRenter)
+        {
+            Car car = new Car(carWithRenter);
+            for (int i = 1; i <= CarController.idCounter; i++)
+            {
+                var temp = cars.Find(h => h.Id == i);
+                if (temp == null)
+                {
+                    car.Id = i;
+                    CarController.idCounter++;
+                    break;
+                }
+            }
+            cars.Add(car);
+            if(!car.isRented)
+            {
+                HttpContext.Response.Headers["Location"] = "http://localhost:80/api/Car/" + car.Id;
+                return Ok(car);
+            }
+
+            RenterWithId renterWithId = new RenterWithId(carWithRenter.renter);
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    var json = JsonConvert.SerializeObject(renterWithId);
+                    var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
+                    using (var response = await httpClient.PostAsync(path, httpContent))
+                    {
+                        string apiResponse = await response.Content.ReadAsStringAsync();
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                System.Diagnostics.Debug.WriteLine(exception);
+                return StatusCode(503);
+            }
+            carWithRenter.Id = car.Id;
+            HttpContext.Response.Headers["Location"] = "http://localhost:80/api/Car/" + car.Id;
+            return StatusCode(201, carWithRenter);
+
         }
 
 
@@ -287,6 +322,7 @@ namespace CarAPI.Controllers
                 return BadRequest("Car not found.");
             }
             cars.Remove(car);
+
             return NoContent();
         }
 
@@ -321,9 +357,27 @@ namespace CarAPI.Controllers
 
             return NoContent();
         }
+        [HttpDelete("user/{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            using (var httpClient = new HttpClient())
+            {
+                using (var response = await httpClient.DeleteAsync(path + id))
+                {
+                    string APIResponse = await response.Content.ReadAsStringAsync();
+                }
+            }
+            foreach (var carUser in cars.Where(e => e.renterId == id))
+            {
+                carUser.renterId = null;
+                carUser.isRented = false;
+
+            }
+            return NoContent();
+        }
 
 
-        private bool CarExists(int id)
+            private bool CarExists(int id)
         {
             return cars.Any(e => e.Id == id);
         }

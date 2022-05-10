@@ -11,7 +11,7 @@
         public int? renterId { get; set; }
         public double? Engine { get; set; }
 
-        public Car(Car car)
+        public Car(CarWithRenter car)
         {
             this.Id = car.Id;
             this.Manufacturer = car.Manufacturer;
@@ -19,11 +19,20 @@
             this.Year = car.Year;
             this.Price = car.Price;
             this.isRented = car.isRented;
-            this.renterId = car.renterId;
+            if(car.isRented)
+            {
+                this.renterId = (int)car.renter.Id;
+            }
+            else
+            {
+                this.renterId = null;
+            }
+            
             this.Engine = car.Engine;
         }
         public Car()
         {
+
 
         }
         

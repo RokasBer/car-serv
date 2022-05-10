@@ -8,7 +8,7 @@
         public int Year { get; set; }
         public int Price { get; set; }
         public bool isRented { get; set; }
-        public Renter renter { get; set; }
+        public Renter? renter { get; set; }
         public double? Engine { get; set; }
 
         public CarWithRenter(Car car)
