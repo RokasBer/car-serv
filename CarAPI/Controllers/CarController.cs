@@ -184,6 +184,22 @@ namespace CarAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<dynamic>> AddCarWithUser(CarWithRenter carWithRenter)
         {
+
+            if (carWithRenter.Model == string.Empty)
+            {
+                return BadRequest("No model");
+            }
+            if (carWithRenter.Manufacturer == string.Empty)
+            {
+                return BadRequest("No manufacturer");
+            }
+            if (carWithRenter.Year == null || carWithRenter.Year == 0)
+            {
+                return BadRequest("No year");
+            }
+
+
+
             Car car = new Car(carWithRenter);
             for (int i = 1; i <= CarController.idCounter; i++)
             {
@@ -222,7 +238,7 @@ namespace CarAPI.Controllers
             }
             carWithRenter.Id = car.Id;
             HttpContext.Response.Headers["Location"] = "http://localhost:80/api/Car/" + car.Id;
-            return StatusCode(201, carWithRenter);
+            return Ok(carWithRenter);
 
         }
 
@@ -253,22 +269,37 @@ namespace CarAPI.Controllers
             {
                 car.renterId = null;
             }
+            else
+            {
+                car.renterId = request.renterId;
+            }
+            
             
             return Ok(cars);
         }
 
-        /*[HttpPut("{id}/user")]
+        [HttpPut("{id}/user")]
         public async Task<IActionResult> UpdateCarUser(int id, Renter user)
         {
             var car = cars.Find(h => h.Id == id);
             if (car == null)
             {
-                return BadRequest("Car not found.");
+                return BadRequest("Car with that id not found.");
+            }
+            int userId = (int)car.renterId;
+            using (var httpClient = new HttpClient())
+            {
+                var json = JsonConvert.SerializeObject(user);
+                var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
+                using (var response = await httpClient.PutAsync(path + userId, httpContent))
+                {
+                    string apiResponse = await response.Content.ReadAsStringAsync();
+                }
             }
 
-            int userId = car.Id;
-           
-        }*/
+            return Ok();
+
+        }
 
 
         [HttpPatch("{id}")]
@@ -288,7 +319,7 @@ namespace CarAPI.Controllers
             {
                 car.Model = request.Model;
             }
-            if (request.Year != null)
+            if (request.Year != 0)
             {
                 car.Year = request.Year;
             }
@@ -296,7 +327,7 @@ namespace CarAPI.Controllers
             {
                 car.Engine = request.Engine;
             }
-            if (request.Price != null)
+            if (request.Price != 0)
             {
                 car.Price = request.Price;
             }
@@ -307,7 +338,12 @@ namespace CarAPI.Controllers
             if(request.isRented == null)
             {
                 car.renterId = null;
-            }    
+            }
+            if(car.isRented)
+            {
+                car.renterId = request.renterId;
+            }
+            
            
 
             return Ok(car);
@@ -322,6 +358,7 @@ namespace CarAPI.Controllers
                 return BadRequest("Car not found.");
             }
             cars.Remove(car);
+            CarController.idCounter--;
 
             return NoContent();
         }
@@ -375,9 +412,32 @@ namespace CarAPI.Controllers
             }
             return NoContent();
         }
+        [HttpPost("user")]
+        public async Task<IActionResult> createUser(RenterWithId renterWithId)
+        {
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    var json = JsonConvert.SerializeObject(renterWithId);
+                    var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
+                    using (var response = await httpClient.PostAsync(path, httpContent))
+                    {
+                        string apiResponse = await response.Content.ReadAsStringAsync();
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                System.Diagnostics.Debug.WriteLine(exception);
+                return StatusCode(503);
+            }
+            HttpContext.Response.Headers["Location"] = "http://localhost:5000/contacts/" + renterWithId.Id;
+            return Ok(renterWithId);
 
+        }
 
-            private bool CarExists(int id)
+        private bool CarExists(int id)
         {
             return cars.Any(e => e.Id == id);
         }
