@@ -129,7 +129,7 @@ namespace CarAPI.Controllers
                 }
             }
             catch(Exception ex)
-            { return BadRequest(ex.Message); }
+            { return car; }
 
             renter.Id = (long)car.renterId;
             CarWithRenter carWithRenter = new CarWithRenter(car);
@@ -278,7 +278,7 @@ namespace CarAPI.Controllers
             return Ok(cars);
         }
 
-        [HttpPut("{id}/user")]
+        /*[HttpPut("{id}/user")]
         public async Task<IActionResult> UpdateCarUser(int id, Renter user)
         {
             var car = cars.Find(h => h.Id == id);
@@ -297,12 +297,54 @@ namespace CarAPI.Controllers
                 }
             }
 
+
+
+
+
+
+            return Ok();
+
+        }*/
+
+        [HttpPut("{id}/user")]
+        public async Task<IActionResult> UpdateCarUserr(int id, CarWithRenter carWithRenter)
+        {
+            var car = cars.Find(h => h.Id == id);
+            if (car == null)
+            {
+                return BadRequest("Car with that id not found.");
+            }
+
+            car.Manufacturer = carWithRenter.Manufacturer;
+            car.Model = carWithRenter.Model;
+            car.Year = carWithRenter.Year;
+            car.Engine = carWithRenter.Engine;
+            car.Price = carWithRenter.Price;
+            car.isRented = carWithRenter.isRented;
+            if((carWithRenter.renter == null) || (carWithRenter.isRented == false))
+            {
+                return Ok();
+            }
+
+
+            int userId = (int)car.renterId;
+            using (var httpClient = new HttpClient())
+            {
+                var json = JsonConvert.SerializeObject(carWithRenter.renter);
+                var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
+                using (var response = await httpClient.PutAsync(path + userId, httpContent))
+                {
+                    string apiResponse = await response.Content.ReadAsStringAsync();
+                }
+            }
+
+
             return Ok();
 
         }
 
 
-        [HttpPatch("{id}")]
+        /*[HttpPatch("{id}")]
         public async Task<ActionResult<List<Car>>> UpdatePatch(int id, [FromBody]Car request)
         {
             var car = cars.Find(h => h.Id == id);
@@ -347,7 +389,7 @@ namespace CarAPI.Controllers
            
 
             return Ok(car);
-        }
+        }*/
 
         [HttpDelete("{id}")]
         public async Task<ActionResult<List<Car>>> DeleteCar(int id)
